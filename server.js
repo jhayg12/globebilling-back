@@ -30,5 +30,5 @@ router.route('/users').get((req, res) => {
     
 });
 
-app.use('/', router);
+app.use('/globebilling', router);
 app.listen(4000, () => console.log('Express is Running! on port 4000'));
