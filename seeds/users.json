@@ -1,0 +1,20 @@
+[
+    {
+        "first_name" : "Jayson",
+        "last_name" : "Suyat",
+        "username" : "jhayg12",
+        "email" : "jhayg12@gmail.com",
+        "password" : "$2y$10$Z64lKWyPG7wD7hOFN6hZdeYH4mjH5wXECjRPDcY9b5q6ZCSpZiwpm",
+        "role" : "5b3c2c188e27816c1d26fe03",
+        "status" : 1
+    },
+    {
+        "first_name" : "Jean",
+        "last_name" : "Labignette",
+        "username" : "jean",
+        "email" : "jean@gmail.com",
+        "password" : "$2y$10$Z64lKWyPG7wD7hOFN6hZdeYH4mjH5wXECjRPDcY9b5q6ZCSpZiwpm",
+        "role" : "5b3c2c188e27816c1d26fe03",
+        "status" : 1
+    }
+]
