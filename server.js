@@ -1,34 +1,28 @@
 import express from 'express';
-import cors from 'cors';
 import bodyParser from 'body-parser';
 import mongoose from 'mongoose';
-import Users from './models/users';
-import Roles from './models/roles';
+import user from './routes/user.route';
+import cors from 'cors';
 
 const app = express();
-const router = express.Router();
 
-app.use(cors());
-app.use(bodyParser.json());
-
-mongoose.connect("mongodb://localhost:27017/globebilling");
+mongoose.connect('mongodb://localhost:27017/globebilling');
 
 const connection = mongoose.connection;
+
 connection.once('open', () => {
-    console.log('MongoDB is Running!');
+    console.log('MongoDB is Running on port 27017!');
 });
 
-router.route('/users').get((req, res) => {
-    Users.find((err, users) => {
-        if (err) {
-            res.status(400).json(err);
-        }
-        else {
-            res.status(200).json(users);
-        }
-    }).populate({ path: 'role', select: 'role' });
-    
-});
+const PORT = 3000;
 
-app.use('/globebilling', router);
-app.listen(4000, () => console.log('Express is Running! on port 4000'));
+app.use(cors());
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+
+app.use('/globebilling', user);
+
+// Express
+app.listen(PORT, function(){
+   console.log('Server is running on Port', PORT);
+});
