@@ -3,8 +3,12 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import pwdGen from 'generate-password';
+import dotEnv from 'dotenv';
 import User from '../models/user.model';
 import Role from '../models/role.model';
+
+// Load Environment Variables
+dotEnv.load();
 
 // Send Grid
 import sgMail from '@sendgrid/mail';
@@ -25,7 +29,7 @@ router.route('/users').get((req, res) => {
 router.route('/auth/signup').post((req, res) => {
     bcrypt.hash(req.body.password, 10, (err, hash) => {
         if (err) {
-            res.status(500).json({
+            return res.status(500).json({
                 error: err
             });
         } else {
@@ -45,7 +49,7 @@ router.route('/auth/signup').post((req, res) => {
                     'secret', {
                         expiresIn: 60 * 5
                     });
-                    res.status(200).json({
+                    return res.status(200).json({
                         success: true,
                         data: {
                             userData: result,
@@ -55,7 +59,7 @@ router.route('/auth/signup').post((req, res) => {
                     });
                 })
                 .catch(error => {
-                    res.status(500).json({
+                    return res.status(500).json({
                         error: error.message
                     });
                 });
@@ -64,107 +68,95 @@ router.route('/auth/signup').post((req, res) => {
 
 });
 
-router.route('/auth/signin').post((req, res) => {
-    User.findOne({
-            email: req.body.email
-        })
-        .exec()
-        .then(user => {
-            bcrypt.compare(req.body.password, user.password, (error, result) => {
-                // If Password does not match
-                if (error) {
-                    res.status(401).json({
-                        success: false,
-                        message: 'Unauthorized Access!'
-                    });
-                }
-                if (result) {
-                    const JWTToken = jwt.sign({
-                            email: user.email,
-                            _id: user.id
-                        },
-                        'secret', {
-                            expiresIn: 60 * 5
-                        });
-                    return res.status(200).json({
-                        success: true,
-                        data: {
-                            email: user.email,
-                            token: JWTToken
-                        }
-                    });
-                }
+router.route('/auth/signin').post((req, res) => {    
+    User.findOne({email: req.body.email}, (err, user) => {
+        if (!user) {
+            return res.status(500).json({
+                success: false,
+                message: 'Email Address does not exist!'
+            });
+        }
 
+        bcrypt.compare(req.body.password, user.password, (err, result) => {
+            if (!result) {
                 return res.status(401).json({
                     success: false,
-                    message: 'Unauthorized Access!'
+                    message: 'Incorrect Password!'
                 });
+            }
+
+            const JWTToken = jwt.sign({
+                email: user.email,
+                _id: user.id
+                },
+                process.env.API_SECRET_KEY, {
+                    expiresIn: 60 * 5
+                }
+            );
+
+            return res.status(200).json({
+                success: true,
+                data: {
+                    email: user.email,
+                    token: JWTToken
+                }
             });
-        })
-        .catch(error => {
-            res.status(500).json({
-                success: false,
-                message: 'Email Address does not exist!'
-            });
+
         });
+
+    });
+
 });
 
-router.route('/auth/forgot-password').post((req, res) => {
-    User.findOne({
-            email: req.body.email
-        })
-        .exec()
-        .then(user => {
-
-            const newPwd = pwdGen.generate({
-                length: 10,
-                numbers: true
+router.route('/auth/forgot-password').post((req, res) => {        
+    User.findOne({email: req.body.email}, (err, user) => {
+        if (!user) {
+            return res.status(500).json({
+                success: false,
+                message: 'Email Address does not exist'
             });
+        }
+        const newPwd = pwdGen.generate({
+            length: 10,
+            numbers: true
+        });
 
-            bcrypt.hash(newPwd, 10, (err, hash) => {
-                
-                user.password = hash;
+        bcrypt.hash(newPwd, 10, (err, hash) => {
 
-                const msg = {
-                    to: 'jhayg12@gmail.com',
-                    from: 'jayson@iscale-solutions.com',
-                    subject: 'Globe Billing - Reset Password',
-                    template_id: '3fd0363e-237d-4f68-a1f0-d8602d0676b0',
-                    substitutionWrappers: ['{{', '}}'],
-                    substitutions: {
-                        name: user.fullname,
+            user.password = hash;
+
+            const msg = {
+                to: user.email,
+                from: 'jayson@iscale-solutions.com',
+                subject: 'Globe Billing - Reset Password',
+                template_id: '3fd0363e-237d-4f68-a1f0-d8602d0676b0',
+                substitutionWrappers: ['{{', '}}'],
+                substitutions: {
+                    name: user.fullname,
+                    password: newPwd
+                }
+            }
+
+            sgMail.send(msg);
+
+            user.save()
+                .then(user => {
+                    return res.status(200).json({
+                        success: true,
+                        email: user.email,
                         password: newPwd
-                    },
-                };
-
-                sgMail.send(msg);
-
-                user.save()
-                    .then(() => {
-                        return res.status(200).json({
-                            success: true,
-                            data: {
-                                email: user.email,
-                                password: newPwd
-                            }
-                        });
-
-                    })
-                    .catch(() => {
-                        res.status(500).json({Error:'Update Failed!'});
                     });
 
-            });
-        })
-        .catch(error => {
-            res.status(500).json({
-                success: false,
-                message: 'Email Address does not exist!'
-            });
-        });
-        
-    User.findById(req.params.id, (err, user) => {
+                })
+                .catch(err => {
+                    return res.status(500).json({
+                        success: false,
+                        message: 'Cannot Update Password!'
+                    });
+                });
 
+            });
+        
     });
 });
 
