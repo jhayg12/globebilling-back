@@ -35,6 +35,7 @@ router.route('/auth/signup').post((req, res) => {
         } else {
             const user = new User({
                 _id: new mongoose.Types.ObjectId(),
+                username: req.body.username,
                 fullname: req.body.fullName,
                 role: new mongoose.Types.ObjectId(),
                 email: req.body.email,
@@ -87,6 +88,9 @@ router.route('/auth/signin').post((req, res) => {
 
             const JWTToken = jwt.sign({
                 email: user.email,
+                username: user.username,
+                fullname: user.fullname,
+                role: user.role,
                 _id: user.id
                 },
                 process.env.API_SECRET_KEY, {
@@ -104,7 +108,7 @@ router.route('/auth/signin').post((req, res) => {
 
         });
 
-    });
+    }).populate({path:'role', select:'roleName'});
 
 });
 
