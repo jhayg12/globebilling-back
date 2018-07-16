@@ -2,6 +2,9 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import mongoose from 'mongoose';
 import user from './routes/user.route';
+import role from './routes/role.route';
+import rolepermission from './routes/rolepermission.route';
+import permission from './routes/permission.route';
 import cors from 'cors';
 
 const app = express();
@@ -20,7 +23,7 @@ app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-app.use('/globebilling', user);
+app.use('/globebilling', [ user, role, rolepermission, permission ]);
 
 // Express
 app.listen(PORT, function(){
