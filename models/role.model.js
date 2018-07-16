@@ -4,7 +4,10 @@ const Schema = mongoose.Schema;
 
 let role = Schema({
     _id: Schema.Types.ObjectId,
-    role: {type: String}
+    roleName: {type: String},
+    permission: [{type: Schema.Types.ObjectId, ref: 'Permission', default: []}],
+    createdAt: {type: Date, default: Date.now},
+    updatedAt: {type: Date, default: Date.now}
 });
 
-export default mongoose.model('Roles', role);
+export default mongoose.model('Role', role);
