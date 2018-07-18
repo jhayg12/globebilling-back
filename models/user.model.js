@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import uniqueValidator from 'mongoose-unique-validator';
 
 const Schema = mongoose.Schema;
 
@@ -12,5 +13,8 @@ let user = Schema({
     createdAt: {type: Date, default: Date.now},
     updatedAt: {type: Date, default: Date.now}
 });
+
+// Validate the uniqueness
+user.plugin(uniqueValidator);
 
 export default mongoose.model('User', user);
