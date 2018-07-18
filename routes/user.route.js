@@ -23,8 +23,41 @@ router.route('/users').get((req, res) => {
         } else {
             return res.status(200).json(users);
         }
-    }).populate({path: 'role', select: 'role'});
+    }).populate({path: 'role', select: 'roleName'});
 });
+
+router.route('/users/add').post((req, res) => {
+    bcrypt.hash(req.body.password, 10, (err, hash) => {
+        if (err) {
+            return res.status(500).json({
+                error: err
+            });
+        } else {
+            const user = new User({
+                _id: new mongoose.Types.ObjectId(),
+                username: req.body.username,
+                fullname: req.body.fullName,
+                role: new mongoose.Types.ObjectId(req.body.role),
+                email: req.body.email,
+                password: hash
+            });
+            user.save()
+                .then(result => {
+                    return res.status(200).json({
+                        success: true,
+                        message: 'New User has been created!'
+                    });
+                })
+                .catch(error => {
+                    return res.status(500).json({
+                        error: error.message
+                    });
+                });
+        }
+    });
+
+});
+
 
 router.route('/auth/signup').post((req, res) => {
     bcrypt.hash(req.body.password, 10, (err, hash) => {
@@ -37,27 +70,34 @@ router.route('/auth/signup').post((req, res) => {
                 _id: new mongoose.Types.ObjectId(),
                 username: req.body.username,
                 fullname: req.body.fullName,
-                role: new mongoose.Types.ObjectId(),
+                role: new mongoose.Types.ObjectId('5b4d8267a83b1d4ff53f55d9'), // Viewer Default
                 email: req.body.email,
                 password: hash
             });
             user.save()
                 .then(result => {
-                    const JWTToken = jwt.sign({
-                        email: user.email,
-                        _id: user.id
-                    },
-                    'secret', {
-                        expiresIn: 60 * 5
-                    });
-                    return res.status(200).json({
-                        success: true,
-                        data: {
-                            userData: result,
-                            token: JWTToken
-                        },
-                        message: 'New User has been created!'
-                    });
+                    User.findOne({email: user.email}, (err, userData) => {
+                        if (result) {
+                            const JWTToken = jwt.sign({
+                                email: userData.email,
+                                username: userData.username,
+                                fullname: userData.fullname,
+                                role: userData.role,
+                                _id: userData.id
+                            },
+                            process.env.API_SECRET_KEY, {
+                                expiresIn: 60 * 15
+                            });
+                            return res.status(200).json({
+                                success: true,
+                                data: {
+                                    userData: result,
+                                    token: JWTToken
+                                },
+                                message: 'New User has been created!'
+                            });
+                        }
+                    }).populate({path: 'role', select: 'roleName'});
                 })
                 .catch(error => {
                     return res.status(500).json({
@@ -87,14 +127,14 @@ router.route('/auth/signin').post((req, res) => {
             }
 
             const JWTToken = jwt.sign({
-                email: user.email,
-                username: user.username,
-                fullname: user.fullname,
-                role: user.role,
-                _id: user.id
+                    email: user.email,
+                    username: user.username,
+                    fullname: user.fullname,
+                    role: user.role,
+                    _id: user.id
                 },
-                process.env.API_SECRET_KEY, {
-                    expiresIn: 60 * 5
+                    process.env.API_SECRET_KEY, {
+                    expiresIn: 60 * 15
                 }
             );
 
